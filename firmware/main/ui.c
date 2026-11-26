@@ -141,6 +141,7 @@ static void render_ms(uint32_t ms, bool ceil_mode)
     set_digit(0, (tens == 0) ? 10 : tens);  /* 10 = 留空 */
     set_digit(1, ones);
     set_digit(2, (int)tenth);
+    lv_obj_set_style_bg_opa(s_minus, LV_OPA_TRANSP, 0);   /* 非负状态收起负号 */
 }
 
 /* 有符号：负数表示超时，左侧点亮负号 */

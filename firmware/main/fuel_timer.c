@@ -46,6 +46,7 @@ static const char *TAG = "fuel_timer";
 #define AMP_WARMUP_MS         5000     /* 最后 5 秒提前打开功放，保证 3/2/1 即时发声 */
 #define BEEP_LEN_MS           250      /* 每声长度，太短会被功放唤醒延迟吞掉 */
 #define AUTO_REARM_MS         5000
+#define MIN_RUN_MS            1500     /* 触发短于此时长视为误触：不显示成绩，直接待触发 */
 #define PRESET_DEFAULT_MS     20000
 #define PRESET_MIN_MS         1000
 #define PRESET_MAX_MS         99000
@@ -284,7 +285,25 @@ static void timer_task(void *arg)
 
             /* 确认松开 = 结束；终点用原始松开边沿，避免回弹造成误差 */
             if (release_confirmed) {
-                finish((t_inactive_first - t0) / 1000);
+                int64_t run_ms = (t_inactive_first - t0) / 1000;
+
+                /* 误触保护：短于 MIN_RUN_MS 不显示时间，直接回到待触发 */
+                if (run_ms < MIN_RUN_MS) {
+                    ESP_LOGI(TAG, "IGNORED short press (%lld ms) -> back to ARMED",
+                             (long long)run_ms);
+                    buzzer_stop();
+                    buzzer_arm(false);
+                    if (lvgl_port_lock(100)) {
+                        ui_set_warn(false);
+                        lvgl_port_unlock();
+                    }
+                    set_state(UI_ARMED);
+                    s_armed_ready = false;   /* 需要重新确认一次松开，避免抖动连击 */
+                    lockout_until = now + (int64_t)BOUNCE_WINDOW_MS * 1000;
+                    break;
+                }
+
+                finish(run_ms);
                 done_at = now;
                 lockout_until = now + (int64_t)BOUNCE_WINDOW_MS * 1000;
                 ESP_LOGI(TAG, "STOP by release");
