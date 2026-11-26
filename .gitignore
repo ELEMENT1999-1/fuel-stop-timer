@@ -1,0 +1,27 @@
+# ============================================================
+#  ESP-IDF 构建产物（体积大、可重建，不入库）
+# ============================================================
+build/
+firmware/build/
+sdkconfig
+firmware/sdkconfig
+sdkconfig.old
+firmware/sdkconfig.old
+
+# 组件管理器下载的托管组件（由 dependencies.lock 还原，不入库）
+managed_components/
+firmware/managed_components/
+
+# ============================================================
+#  编辑器 / 系统噪音
+# ============================================================
+.vscode/
+.vs/
+*.log
+*.tmp
+*.swp
+*~
+Thumbs.db
+desktop.ini
+.DS_Store
+~$*
